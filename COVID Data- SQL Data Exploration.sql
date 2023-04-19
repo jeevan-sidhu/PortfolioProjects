@@ -1,22 +1,34 @@
+/*
+Covid 19 Data Exploration 
+Skills used: Joins, CTE's, Temp Tables, Windows Functions, Aggregate Functions, Creating Views
+*/
+Select *
+From CovidDeaths
+Where continent is not null 
+order by 3,4;
+
+-- Select important data to explore
+
 SELECT location, date, total_cases, new_cases, total_deaths, population
 FROM coviddeaths;
 
---Shows likelyhood of dying if you contract covid in your country
+-- Total Cases Vs Total Deaths
+-- Shows likelyhood of dying if you contract covid in your country
 
 SELECT location, date, total_cases, total_deaths, Round((total_deaths/total_cases)*100,2) AS death_percentage
 FROM coviddeaths
 WHERE location = 'Canada'
 ORDER BY 1,2;
 
---Looking at Total Cases Vs Population
---Shows what percentage of Population got Covid
+-- Total Cases Vs Population
+-- Shows what percentage of Population got Covid
 
 SELECT location, date, population, total_cases, Round((total_cases/population)*100,2) AS PercentPopulationInfected
 FROM coviddeaths
 WHERE location = 'Canada'
 ORDER BY 1,2;
 
---Looking at Countries with highest infection rate compared to Population
+-- Countries with highest infection rate compared to Population
 
 SELECT location, population, MAX(total_cases) AS Highest_Infection_Count, Round(MAX(total_cases/population)*100,2) AS PercentPopulationInfected
 FROM coviddeaths
@@ -24,7 +36,7 @@ WHERE total_cases IS NOT NULL
 GROUP BY location, population
 ORDER BY 4 DESC;
 
---Showing Countries with Highest Death Count
+-- Countries with Highest Death Count
 
 SELECT location, MAX(total_deaths) AS Total_Death_Count
 FROM coviddeaths
@@ -63,7 +75,7 @@ AND DEA.DATE = VAC.DATE
 WHERE DEA.CONTINENT IS NOT NULL
 ORDER BY 2,3;
 
--- Using CTE
+-- Using CTE to perform Calculation on Partition By
 
 WITH Pop_Vs_Vac (continent, location, date, population, new_vaccinations, Rolling_People_Vaccinated)
 As
@@ -82,7 +94,7 @@ WHERE DEA.CONTINENT IS NOT NULL
 SELECT *,Round((Rolling_People_Vaccinated/population)*100,2) AS Percent_Population_Vaccinated 
 FROM Pop_Vs_Vac;
 
--- Using Temp Table
+-- Using Temp Table to perform Calculation on Partition By
 
 DROP TABLE IF EXISTS PercentPopulationVaccinated;
 CREATE TEMP TABLE PercentPopulationVaccinated
@@ -109,3 +121,20 @@ WHERE DEA.CONTINENT IS NOT NULL;
 SELECT *,Round((Rolling_People_Vaccinated/population)*100,2) AS Percent_Population_Vaccinated 
 FROM PercentPopulationVaccinated;
 
+-- Creating View for visualisations
+
+CREATE VIEW PercentPopulationVaccinated AS
+SELECT DEA.CONTINENT,
+	DEA.LOCATION,
+	DEA.DATE,
+	DEA.POPULATION,
+	VAC.NEW_VACCINATIONS,
+	SUM(NEW_VACCINATIONS) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS Rolling_People_Vaccinated
+FROM COVIDDEATHS AS DEA
+JOIN COVIDVACCINATIONS AS VAC ON DEA.LOCATION = VAC.LOCATION
+AND DEA.DATE = VAC.DATE
+WHERE DEA.CONTINENT IS NOT NULL
+ORDER BY 2,3;
+
+SELECT *
+FROM PercentPopulationVaccinated;
