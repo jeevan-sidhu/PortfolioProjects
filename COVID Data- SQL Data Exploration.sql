@@ -138,3 +138,41 @@ ORDER BY 2,3;
 
 SELECT *
 FROM PercentPopulationVaccinated;
+
+/*
+Queries used for Tableau Project
+*/
+
+
+
+-- 1. 
+
+SELECT SUM(new_cases) AS total_cases, SUM(new_deaths) AS total_deaths, Round(SUM(new_deaths)/NULLIF(SUM(new_cases),0)*100,2) AS Death_Rate
+FROM coviddeaths
+WHERE continent IS not null
+ORDER BY 1,2;
+
+
+-- 2. 
+
+Select location, SUM(new_deaths) AS total_deaths
+From CovidDeaths
+Where continent is null 
+AND location not in ('World', 'European Union', 'High income', 'Upper middle income', 'Low income', 'Lower middle income')
+Group by location
+order by total_deaths desc
+
+
+-- 3.
+
+SELECT location, population, MAX(total_cases)as HighestInfectionCount, Max(Round((total_cases/population)*100,2)) AS PercentPopulationInfected
+FROM coviddeaths
+Group by Location, Population
+order by PercentPopulationInfected desc
+
+-- 4.
+
+SELECT location, population, date, MAX(total_cases)as HighestInfectionCount, Max(Round((total_cases/population)*100,2)) AS PercentPopulationInfected
+FROM coviddeaths
+Group by Location, Population, date
+order by PercentPopulationInfected
